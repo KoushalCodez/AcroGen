@@ -1,11 +1,16 @@
 import os
 import sqlite3
 from datetime import datetime
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response, status
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
+from typing import Optional
 from generate_pdf import generate_pdf
 
 app = FastAPI()
+
+class ReportRequest(BaseModel):
+    force: bool = False
 
 def init_db():
     conn = sqlite3.connect('report.db')
@@ -27,10 +32,25 @@ init_db()
 def health():
     return {"status": "ok"}
 
-@app.post("/reports", status_code=201)
-async def create_report():
+@app.post("/reports")
+async def create_report(response: Response, req: Optional[ReportRequest] = None):
+    force = req.force if req else False
+    
     conn = sqlite3.connect('report.db')
+    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
+    
+    today = datetime.now().strftime("%Y-%m-%d")
+    
+    if not force:
+        # Check if a report exists for today
+        cursor.execute("SELECT id, path FROM reports WHERE created_at LIKE ?", (today + "%",))
+        row = cursor.fetchone()
+        if row:
+            # Return existing report with 200 OK
+            response.status_code = status.HTTP_200_OK
+            conn.close()
+            return {"id": row['id'], "file": f"/reports/{row['id']}/file"}
     
     # Insert an initial record to generate an ID
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -47,6 +67,7 @@ async def create_report():
     # Run the PDF generation pipeline (this will hang for a few seconds)
     await generate_pdf(pdf_path)
     
+    response.status_code = status.HTTP_201_CREATED
     return {"id": report_id, "file": f"/reports/{report_id}/file"}
 
 @app.get("/reports/{report_id}")
