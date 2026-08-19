@@ -115,3 +115,4 @@ dmypy.json
 report.db
 reports/
 my-report.pdf
+take_screenshot.py
