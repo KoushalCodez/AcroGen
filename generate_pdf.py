@@ -98,7 +98,7 @@ def build_html(data):
     
     return html
 
-async def generate_pdf():
+async def generate_pdf(pdf_path="reports/test.pdf"):
     # Ensure reports directory exists
     os.makedirs("reports", exist_ok=True)
     
@@ -111,7 +111,6 @@ async def generate_pdf():
         
         await page.set_content(html_content, wait_until="networkidle")
         
-        pdf_path = "reports/test.pdf"
         await page.pdf(
             path=pdf_path,
             format="A4",

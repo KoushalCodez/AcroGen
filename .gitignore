@@ -110,3 +110,8 @@ dmypy.json
 
 # pytype static type analyzer
 .pytype/
+
+# Custom App Data
+report.db
+reports/
+my-report.pdf
