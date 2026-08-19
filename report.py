@@ -39,13 +39,22 @@ def getReportData():
     """, (seven_days_ago,))
     orders_per_day = [{"date": row['order_date'], "count": row['order_count']} for row in cursor.fetchall()]
     
+    # 5. All orders for the long table
+    cursor.execute("""
+        SELECT id, customer, product, amount, created_at
+        FROM orders
+        ORDER BY created_at DESC
+    """)
+    all_orders = [dict(row) for row in cursor.fetchall()]
+    
     conn.close()
     
     return {
         "total_orders": total_orders,
         "total_revenue": round(total_revenue, 2),
         "top_products": top_products,
-        "orders_per_day_last_7_days": orders_per_day
+        "orders_per_day_last_7_days": orders_per_day,
+        "all_orders": all_orders
     }
 
 if __name__ == "__main__":
